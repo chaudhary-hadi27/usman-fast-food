@@ -408,35 +408,6 @@ export default function Menu() {
                       ? "We're preparing delicious items for you. Check back soon!" 
                       : "We couldn't find any items matching your search."}
                   </p>
-                  
-                  {menuItems.length === 0 ? (
-                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-2xl p-8 shadow-xl">
-                      <p className="text-sm text-gray-700 mb-6 font-semibold">
-                        <strong className="text-yellow-600">Admin:</strong> Login to add menu items
-                      </p>
-                      <a href="/admin/login">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="bg-black text-yellow-400 hover:bg-gray-900 px-8 py-4 rounded-xl font-black transition text-lg shadow-lg"
-                        >
-                          Go to Admin Panel →
-                        </motion.button>
-                      </a>
-                    </div>
-                  ) : (
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        setSelectedCategory('All');
-                        setSearchQuery('');
-                      }}
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black px-10 py-5 rounded-xl font-black text-lg hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-xl hover:shadow-2xl"
-                    >
-                      Clear Filters & Show All
-                    </motion.button>
-                  )}
                 </div>
               </motion.div>
             )}
