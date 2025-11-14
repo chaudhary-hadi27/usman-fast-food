@@ -129,6 +129,9 @@ export default function Home() {
       {/* Featured Menu Section */}
       <FeaturedMenu onCartUpdate={updateCartCount} />
 
+      {/* Testimonials Section */}
+      <Testimonials />
+
       {/* Features Section */}
       <section className="py-12 sm:py-20 md:py-32 bg-white">
         <div className="container mx-auto px-4">
@@ -206,9 +209,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <Testimonials />
-
       {/* Stats Section */}
       <section className="py-12 sm:py-20 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -263,7 +263,7 @@ export default function Home() {
             Browse our delicious menu and get your favorite food delivered in minutes
           </p>
           <Link href="/menu">
-            <button className="bg-black text-yellow-400 font-bold py-3 sm:py-4 px-8 sm:px-10 rounded-lg text-base sm:text-lg hover:bg-gray-900 transition-all transform hover:scale-105 shadow-2xl border-2 border-gray-800">
+            <button className="bg-black text-white font-bold py-3 sm:py-4 px-8 sm:px-10 rounded-lg text-base sm:text-lg hover:bg-gray-900 transition-all transform hover:scale-105 shadow-2xl border-2 border-gray-800">
               View Full Menu
             </button>
           </Link>
@@ -271,15 +271,15 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 sm:py-12">
+      <footer className="bg-black text-white py-8 sm:py-12">
         <div className="container mx-auto px-4">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             <div className="text-center sm:text-left">
-              <h3 className="text-xl sm:text-2xl font-bold text-yellow-400 mb-3 sm:mb-4">Usman Fast Food</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Usman Fast Food</h3>
               <p className="text-gray-400 text-sm sm:text-base">Serving delicious food with love since 2020</p>
             </div>
             <div className="text-center sm:text-left">
-              <h4 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg text-yellow-400">Quick Links</h4>
+              <h4 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg text-white">Quick Links</h4>
               <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
                 <li><Link href="/menu" className="hover:text-yellow-400 transition">Menu</Link></li>
                 <li><Link href="/about" className="hover:text-yellow-400 transition">About Us</Link></li>
@@ -288,7 +288,7 @@ export default function Home() {
               </ul>
             </div>
             <div className="text-center sm:text-left">
-              <h4 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg text-yellow-400">Contact Us</h4>
+              <h4 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg white">Contact Us</h4>
               <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
                 <li>📞 +92 300 1234567</li>
                 <li>📧 info@usmanfastfood.com</li>
