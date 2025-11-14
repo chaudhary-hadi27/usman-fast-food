@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import Header from '../../../components/Header';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 
@@ -98,128 +97,120 @@ export default function Cart() {
   };
 
   return (
-    <>
-      <Head>
-        <title>Cart - Usman Fast Food</title>
-      </Head>
+    <div className="min-h-screen bg-gray-50">
+      <Header cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} />
 
-      <div className="min-h-screen bg-gray-50">
-        <Header cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} />
+      <div className="container mx-auto px-4 py-12">
+        <h1 className="text-5xl font-bold text-center mb-12 text-black">Your Cart</h1>
 
-        <div className="container mx-auto px-4 py-12">
-          <h1 className="text-5xl font-bold text-center mb-12 text-black">Your Cart</h1>
-
-          {cartItems.length === 0 ? (
-            <div className="text-center py-20">
-              <ShoppingBag className="w-24 h-24 mx-auto mb-6 text-gray-400" />
-              <h2 className="text-3xl font-bold mb-4">Your cart is empty</h2>
-              <p className="text-gray-600 mb-8">Add some delicious items from our menu!</p>
-              <a href="/menu">
-                <button className="btn-primary">Browse Menu</button>
-              </a>
-            </div>
-          ) : (
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Cart Items */}
-              <div className="lg:col-span-2 space-y-4">
-                {cartItems.map(item => (
-                  <div key={item._id} className="card flex items-center p-4">
-                    <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-lg" />
-                    <div className="flex-1 ml-4">
-                      <h3 className="text-xl font-bold">{item.name}</h3>
-                      <p className="text-yellow-600 font-semibold">Rs. {item.price}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(item._id, -1)}
-                          className="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="font-bold w-8 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item._id, 1)}
-                          className="bg-yellow-400 hover:bg-yellow-500 p-2 rounded-lg"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+        {cartItems.length === 0 ? (
+          <div className="text-center py-20">
+            <ShoppingBag className="w-24 h-24 mx-auto mb-6 text-gray-400" />
+            <h2 className="text-3xl font-bold mb-4">Your cart is empty</h2>
+            <p className="text-gray-600 mb-8">Add some delicious items from our menu!</p>
+            <a href="/menu">
+              <button className="btn-primary">Browse Menu</button>
+            </a>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              {cartItems.map(item => (
+                <div key={item._id} className="card flex items-center p-4">
+                  <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-lg" />
+                  <div className="flex-1 ml-4">
+                    <h3 className="text-xl font-bold">{item.name}</h3>
+                    <p className="text-yellow-600 font-semibold">Rs. {item.price}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => removeItem(item._id)}
-                        className="text-red-500 hover:text-red-700 p-2"
+                        onClick={() => updateQuantity(item._id, -1)}
+                        className="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="font-bold w-8 text-center">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item._id, 1)}
+                        className="bg-yellow-400 hover:bg-yellow-500 p-2 rounded-lg"
+                      >
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Order Form */}
-              <div className="lg:col-span-1">
-                <div className="card p-6 sticky top-24">
-                  <h2 className="text-2xl font-bold mb-6">Order Details</h2>
-                  <form onSubmit={handleSubmitOrder} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">Your Name</label>
-                      <input
-                        type="text"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        className="input-field"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">Phone Number</label>
-                      <input
-                        type="tel"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="input-field"
-                        placeholder="03XX-XXXXXXX"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">Delivery Address</label>
-                      <textarea
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                        className="input-field"
-                        rows={3}
-                        required
-                      />
-                    </div>
-                    <div className="border-t pt-4">
-                      <div className="flex justify-between mb-2">
-                        <span className="font-semibold">Subtotal:</span>
-                        <span>Rs. {totalAmount}</span>
-                      </div>
-                      <div className="flex justify-between mb-2">
-                        <span className="font-semibold">Delivery:</span>
-                        <span className="text-green-600">FREE</span>
-                      </div>
-                      <div className="flex justify-between text-xl font-bold border-t pt-2">
-                        <span>Total:</span>
-                        <span className="text-yellow-600">Rs. {totalAmount}</span>
-                      </div>
-                    </div>
                     <button
-                      type="submit"
-                      disabled={loading}
-                      className="btn-primary w-full"
+                      onClick={() => removeItem(item._id)}
+                      className="text-red-500 hover:text-red-700 p-2"
                     >
-                      {loading ? 'Placing Order...' : 'Confirm Order'}
+                      <Trash2 className="w-5 h-5" />
                     </button>
-                  </form>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            <div className="lg:col-span-1">
+              <div className="card p-6 sticky top-24">
+                <h2 className="text-2xl font-bold mb-6">Order Details</h2>
+                <form onSubmit={handleSubmitOrder} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Your Name</label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="input-field"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      className="input-field"
+                      placeholder="03XX-XXXXXXX"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Delivery Address</label>
+                    <textarea
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      className="input-field"
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-semibold">Subtotal:</span>
+                      <span>Rs. {totalAmount}</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="font-semibold">Delivery:</span>
+                      <span className="text-green-600">FREE</span>
+                    </div>
+                    <div className="flex justify-between text-xl font-bold border-t pt-2">
+                      <span>Total:</span>
+                      <span className="text-yellow-600">Rs. {totalAmount}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-primary w-full"
+                  >
+                    {loading ? 'Placing Order...' : 'Confirm Order'}
+                  </button>
+                </form>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
