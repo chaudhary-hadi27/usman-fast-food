@@ -1,8 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  images: {
+    // Keep existing domains
+    domains: ["images.unsplash.com", "res.cloudinary.com"],
+
+    // Add remotePatterns for placeholder.com
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+        port: "",      // optional
+        pathname: "/**", // allow all paths under this domain
+      },
+    ],
+  },
   reactCompiler: true,
 };
 
-export default nextConfig;
+module.exports = nextConfig;
