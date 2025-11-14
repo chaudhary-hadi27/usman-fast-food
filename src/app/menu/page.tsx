@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import Header from '../../components/Header';
+import Header from '../../../components/Header';
 import { ShoppingCart, Plus } from 'lucide-react';
 
 interface MenuItem {

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '../../../lib/mongodb';
-import Order from '../../../models/Order';
+import dbConnect from '../../../../lib/mongodb';
+import Order from '../../../../models/Order';
 
 function generateOrderId() {
   return 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();

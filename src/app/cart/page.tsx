@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import Header from '../../components/Header';
+import Header from '../../../components/Header';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 
 interface CartItem {
