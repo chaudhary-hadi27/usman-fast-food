@@ -1,25 +1,52 @@
+// FILE: components/Header.tsx (UPDATED)
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Menu, X } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface HeaderProps {
   cartCount?: number;
 }
 
+interface UserData {
+  name: string;
+  email: string;
+}
+
 export default function Header({ cartCount = 0 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    
+    // Check if user is logged in
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userData');
+    setUser(null);
+    setShowUserMenu(false);
+    toast.success('Logged out successfully');
+    router.push('/');
+  };
 
   return (
     <header 
@@ -54,6 +81,8 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                 </Link>
               </li>
             ))}
+            
+            {/* Cart Icon */}
             <li>
               <Link href="/cart" className="relative hover:text-yellow-400 transition flex items-center group ml-2">
                 <div className="relative">
@@ -70,6 +99,62 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                 </div>
               </Link>
             </li>
+
+            {/* User Menu */}
+            {user ? (
+              <li className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold transition-all"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="hidden xl:inline">{user.name.split(' ')[0]}</span>
+                </button>
+
+                <AnimatePresence>
+                  {showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 border-2 border-gray-100"
+                    >
+                      <Link
+                        href="/profile"
+                        onClick={() => setShowUserMenu(false)}
+                        className="block px-4 py-2 text-gray-800 hover:bg-yellow-50 transition font-semibold"
+                      >
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/profile?tab=orders"
+                        onClick={() => setShowUserMenu(false)}
+                        className="block px-4 py-2 text-gray-800 hover:bg-yellow-50 transition font-semibold"
+                      >
+                        My Orders
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition font-semibold flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+            ) : (
+              <li>
+                <Link
+                  href="/auth/login"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2"
+                >
+                  <User className="w-5 h-5" />
+                  <span>Login</span>
+                </Link>
+              </li>
+            )}
           </ul>
 
           {/* Mobile Menu Button */}
@@ -129,6 +214,67 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                     Cart {cartCount > 0 && `(${cartCount})`}
                   </Link>
                 </motion.li>
+
+                {/* Mobile User Menu */}
+                {user ? (
+                  <>
+                    <motion.li
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="pt-4 border-t border-gray-700"
+                    >
+                      <div className="flex items-center gap-2 text-yellow-400 py-2 font-bold">
+                        <User className="w-5 h-5" />
+                        {user.name}
+                      </div>
+                    </motion.li>
+                    <motion.li
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.7 }}
+                    >
+                      <Link
+                        href="/profile"
+                        className="block text-white hover:text-yellow-400 transition py-2 font-semibold pl-7"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        My Profile
+                      </Link>
+                    </motion.li>
+                    <motion.li
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full text-left text-red-400 hover:text-red-300 transition py-2 font-semibold pl-7 flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </motion.li>
+                  </>
+                ) : (
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="pt-4 border-t border-gray-700"
+                  >
+                    <Link
+                      href="/auth/login"
+                      className="block bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-lg font-bold text-center transition"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Login / Sign Up
+                    </Link>
+                  </motion.li>
+                )}
               </ul>
             </motion.div>
           )}
