@@ -108,11 +108,11 @@ export default function Cart() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Header cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} />
 
-      <div className="container mx-auto px-4 pt-24 pb-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12">
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl md:text-6xl font-black text-center mb-12"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-center mb-8 sm:mb-12"
         >
           Your <span className="text-gradient">Cart</span>
         </motion.h1>
@@ -121,21 +121,21 @@ export default function Cart() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20"
+            className="text-center py-12 sm:py-20"
           >
-            <ShoppingBag className="w-32 h-32 mx-auto mb-6 text-gray-300" />
-            <h2 className="text-3xl md:text-4xl font-black mb-4">Your cart is empty</h2>
-            <p className="text-gray-600 mb-8 text-lg">Add some delicious items from our menu!</p>
+            <ShoppingBag className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-6 text-gray-300" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4">Your cart is empty</h2>
+            <p className="text-gray-600 mb-8 text-base sm:text-lg">Add some delicious items from our menu!</p>
             <a href="/menu">
-              <button className="btn-primary text-lg">
-                Browse Menu <ArrowRight className="inline w-5 h-5 ml-2" />
+              <button className="btn-primary text-base sm:text-lg">
+                Browse Menu <ArrowRight className="inline w-4 h-4 sm:w-5 sm:h-5 ml-2" />
               </button>
             </a>
           </motion.div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
               <AnimatePresence>
                 {cartItems.map((item, index) => (
                   <motion.div
@@ -144,38 +144,38 @@ export default function Cart() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.1 }}
-                    className="card flex items-center p-4 md:p-6"
+                    className="card flex items-center p-3 sm:p-4 md:p-6 gap-3 sm:gap-4"
                   >
                     <img 
                       src={item.image} 
                       alt={item.name} 
-                      className="w-20 h-20 md:w-28 md:h-28 object-cover rounded-lg shadow-md"
+                      className="w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 object-cover rounded-lg shadow-md flex-shrink-0"
                     />
-                    <div className="flex-1 ml-4 md:ml-6">
-                      <h3 className="text-lg md:text-xl font-black">{item.name}</h3>
-                      <p className="text-yellow-600 font-bold text-lg">Rs. {item.price}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg md:text-xl font-black truncate">{item.name}</h3>
+                      <p className="text-yellow-600 font-bold text-sm sm:text-base md:text-lg">Rs. {item.price}</p>
                     </div>
-                    <div className="flex items-center gap-2 md:gap-4">
-                      <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                      <div className="flex items-center gap-1 sm:gap-2 bg-gray-100 rounded-lg p-1">
                         <button
                           onClick={() => updateQuantity(item._id, -1)}
-                          className="bg-white hover:bg-gray-200 p-2 rounded-lg transition shadow-sm"
+                          className="bg-white hover:bg-gray-200 p-1.5 sm:p-2 rounded-lg transition shadow-sm"
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
-                        <span className="font-black w-8 text-center">{item.quantity}</span>
+                        <span className="font-black w-6 sm:w-8 text-center text-sm sm:text-base">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item._id, 1)}
-                          className="bg-yellow-400 hover:bg-yellow-500 p-2 rounded-lg transition shadow-sm"
+                          className="bg-yellow-400 hover:bg-yellow-500 p-1.5 sm:p-2 rounded-lg transition shadow-sm"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                       <button
                         onClick={() => removeItem(item._id, item.name)}
-                        className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition"
+                        className="text-red-500 hover:text-red-700 p-1.5 sm:p-2 hover:bg-red-50 rounded-lg transition"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </div>
                   </motion.div>
@@ -188,54 +188,54 @@ export default function Cart() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="card p-6 sticky top-24"
+                className="card p-4 sm:p-6 lg:sticky lg:top-24"
               >
-                <h2 className="text-2xl font-black mb-6">Order Details</h2>
-                <form onSubmit={handleSubmitOrder} className="space-y-4">
+                <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6">Order Details</h2>
+                <form onSubmit={handleSubmitOrder} className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className="block text-sm font-bold mb-2">Your Name *</label>
+                    <label className="block text-xs sm:text-sm font-bold mb-2">Your Name *</label>
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="input-field"
+                      className="input-field text-sm sm:text-base"
                       placeholder="Enter your name"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold mb-2">Phone Number *</label>
+                    <label className="block text-xs sm:text-sm font-bold mb-2">Phone Number *</label>
                     <input
                       type="tel"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="input-field"
+                      className="input-field text-sm sm:text-base"
                       placeholder="03XX-XXXXXXX"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold mb-2">Delivery Address *</label>
+                    <label className="block text-xs sm:text-sm font-bold mb-2">Delivery Address *</label>
                     <textarea
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
-                      className="input-field"
+                      className="input-field text-sm sm:text-base"
                       rows={3}
                       placeholder="Enter complete address"
                       required
                     />
                   </div>
                   
-                  <div className="border-t-2 border-gray-200 pt-4 space-y-2">
-                    <div className="flex justify-between text-gray-700">
+                  <div className="border-t-2 border-gray-200 pt-3 sm:pt-4 space-y-2">
+                    <div className="flex justify-between text-gray-700 text-sm sm:text-base">
                       <span className="font-semibold">Subtotal:</span>
                       <span className="font-bold">Rs. {totalAmount}</span>
                     </div>
-                    <div className="flex justify-between text-gray-700">
+                    <div className="flex justify-between text-gray-700 text-sm sm:text-base">
                       <span className="font-semibold">Delivery:</span>
                       <span className="text-green-600 font-bold">FREE</span>
                     </div>
-                    <div className="flex justify-between text-2xl font-black border-t-2 border-gray-200 pt-2">
+                    <div className="flex justify-between text-xl sm:text-2xl font-black border-t-2 border-gray-200 pt-2">
                       <span>Total:</span>
                       <span className="text-yellow-600">Rs. {totalAmount}</span>
                     </div>
@@ -244,16 +244,16 @@ export default function Cart() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn-primary w-full flex items-center justify-center gap-2"
+                    className="btn-primary w-full text-sm sm:text-base"
                   >
                     {loading ? (
                       <>
-                        <div className="spinner w-5 h-5 border-2"></div>
+                        <div className="spinner w-4 h-4 sm:w-5 sm:h-5 border-2"></div>
                         Placing Order...
                       </>
                     ) : (
                       <>
-                        Confirm Order <ArrowRight className="w-5 h-5" />
+                        Confirm Order <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                       </>
                     )}
                   </button>
