@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import Header from '../../../components/Header';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 
 interface CartItem {
   _id: string;
@@ -25,8 +27,12 @@ export default function Cart() {
   }, []);
 
   const loadCart = () => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    setCartItems(cart);
+    try {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      setCartItems(cart);
+    } catch (error) {
+      setCartItems([]);
+    }
   };
 
   const updateQuantity = (id: string, change: number) => {
@@ -39,12 +45,14 @@ export default function Cart() {
     });
     setCartItems(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
+    toast.success('Cart updated!');
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: string, name: string) => {
     const updatedCart = cartItems.filter(item => item._id !== id);
     setCartItems(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
+    toast.success(`${name} removed from cart`);
   };
 
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -53,7 +61,7 @@ export default function Cart() {
     e.preventDefault();
     
     if (cartItems.length === 0) {
-      alert('Your cart is empty!');
+      toast.error('Your cart is empty!');
       return;
     }
 
@@ -83,88 +91,120 @@ export default function Cart() {
 
       if (res.ok) {
         localStorage.removeItem('cart');
-        alert(`Order placed successfully! Your Order ID is: ${data.orderId}`);
+        toast.success('Order placed successfully! 🎉');
         router.push(`/track?orderId=${data.orderId}`);
       } else {
-        alert('Failed to place order. Please try again.');
+        toast.error('Failed to place order. Please try again.');
       }
     } catch (error) {
       console.error('Error placing order:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Header cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} />
 
-      <div className="container mx-auto px-4 py-12">
-        <h1 className="text-5xl font-bold text-center mb-12 text-black">Your Cart</h1>
+      <div className="container mx-auto px-4 pt-24 pb-12">
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-6xl font-black text-center mb-12"
+        >
+          Your <span className="text-gradient">Cart</span>
+        </motion.h1>
 
         {cartItems.length === 0 ? (
-          <div className="text-center py-20">
-            <ShoppingBag className="w-24 h-24 mx-auto mb-6 text-gray-400" />
-            <h2 className="text-3xl font-bold mb-4">Your cart is empty</h2>
-            <p className="text-gray-600 mb-8">Add some delicious items from our menu!</p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-20"
+          >
+            <ShoppingBag className="w-32 h-32 mx-auto mb-6 text-gray-300" />
+            <h2 className="text-3xl md:text-4xl font-black mb-4">Your cart is empty</h2>
+            <p className="text-gray-600 mb-8 text-lg">Add some delicious items from our menu!</p>
             <a href="/menu">
-              <button className="btn-primary">Browse Menu</button>
+              <button className="btn-primary text-lg">
+                Browse Menu <ArrowRight className="inline w-5 h-5 ml-2" />
+              </button>
             </a>
-          </div>
+          </motion.div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map(item => (
-                <div key={item._id} className="card flex items-center p-4">
-                  <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-lg" />
-                  <div className="flex-1 ml-4">
-                    <h3 className="text-xl font-bold">{item.name}</h3>
-                    <p className="text-yellow-600 font-semibold">Rs. {item.price}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
+              <AnimatePresence>
+                {cartItems.map((item, index) => (
+                  <motion.div
+                    key={item._id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="card flex items-center p-4 md:p-6"
+                  >
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-20 h-20 md:w-28 md:h-28 object-cover rounded-lg shadow-md"
+                    />
+                    <div className="flex-1 ml-4 md:ml-6">
+                      <h3 className="text-lg md:text-xl font-black">{item.name}</h3>
+                      <p className="text-yellow-600 font-bold text-lg">Rs. {item.price}</p>
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-4">
+                      <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => updateQuantity(item._id, -1)}
+                          className="bg-white hover:bg-gray-200 p-2 rounded-lg transition shadow-sm"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="font-black w-8 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item._id, 1)}
+                          className="bg-yellow-400 hover:bg-yellow-500 p-2 rounded-lg transition shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
                       <button
-                        onClick={() => updateQuantity(item._id, -1)}
-                        className="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg"
+                        onClick={() => removeItem(item._id, item.name)}
+                        className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition"
                       >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="font-bold w-8 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item._id, 1)}
-                        className="bg-yellow-400 hover:bg-yellow-500 p-2 rounded-lg"
-                      >
-                        <Plus className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
-                    <button
-                      onClick={() => removeItem(item._id)}
-                      className="text-red-500 hover:text-red-700 p-2"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
 
+            {/* Order Form */}
             <div className="lg:col-span-1">
-              <div className="card p-6 sticky top-24">
-                <h2 className="text-2xl font-bold mb-6">Order Details</h2>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card p-6 sticky top-24"
+              >
+                <h2 className="text-2xl font-black mb-6">Order Details</h2>
                 <form onSubmit={handleSubmitOrder} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold mb-2">Your Name</label>
+                    <label className="block text-sm font-bold mb-2">Your Name *</label>
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       className="input-field"
+                      placeholder="Enter your name"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold mb-2">Phone Number</label>
+                    <label className="block text-sm font-bold mb-2">Phone Number *</label>
                     <input
                       type="tel"
                       value={customerPhone}
@@ -175,38 +215,50 @@ export default function Cart() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold mb-2">Delivery Address</label>
+                    <label className="block text-sm font-bold mb-2">Delivery Address *</label>
                     <textarea
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
                       className="input-field"
                       rows={3}
+                      placeholder="Enter complete address"
                       required
                     />
                   </div>
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between mb-2">
+                  
+                  <div className="border-t-2 border-gray-200 pt-4 space-y-2">
+                    <div className="flex justify-between text-gray-700">
                       <span className="font-semibold">Subtotal:</span>
-                      <span>Rs. {totalAmount}</span>
+                      <span className="font-bold">Rs. {totalAmount}</span>
                     </div>
-                    <div className="flex justify-between mb-2">
+                    <div className="flex justify-between text-gray-700">
                       <span className="font-semibold">Delivery:</span>
-                      <span className="text-green-600">FREE</span>
+                      <span className="text-green-600 font-bold">FREE</span>
                     </div>
-                    <div className="flex justify-between text-xl font-bold border-t pt-2">
+                    <div className="flex justify-between text-2xl font-black border-t-2 border-gray-200 pt-2">
                       <span>Total:</span>
                       <span className="text-yellow-600">Rs. {totalAmount}</span>
                     </div>
                   </div>
+                  
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn-primary w-full"
+                    className="btn-primary w-full flex items-center justify-center gap-2"
                   >
-                    {loading ? 'Placing Order...' : 'Confirm Order'}
+                    {loading ? (
+                      <>
+                        <div className="spinner w-5 h-5 border-2"></div>
+                        Placing Order...
+                      </>
+                    ) : (
+                      <>
+                        Confirm Order <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
                   </button>
                 </form>
-              </div>
+              </motion.div>
             </div>
           </div>
         )}

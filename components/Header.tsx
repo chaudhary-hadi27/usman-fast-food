@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart, Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface HeaderProps {
   cartCount?: number;
@@ -10,59 +11,128 @@ interface HeaderProps {
 
 export default function Header({ cartCount = 0 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="bg-black text-white shadow-lg sticky top-0 z-50">
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled 
+          ? 'bg-black/95 backdrop-blur-md shadow-2xl' 
+          : 'bg-black/80 backdrop-blur-sm'
+      }`}
+    >
       <nav className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-yellow-400 hover:text-yellow-300 transition">
-            Usman Fast Food
+          <Link href="/" className="text-2xl md:text-3xl font-black text-yellow-400 hover:text-yellow-300 transition-colors">
+            🍔 Usman Fast Food
           </Link>
 
           {/* Desktop Menu */}
-          <ul className="hidden md:flex space-x-6 items-center">
-            <li><Link href="/" className="hover:text-yellow-400 transition">Home</Link></li>
-            <li><Link href="/menu" className="hover:text-yellow-400 transition">Menu</Link></li>
-            <li><Link href="/track" className="hover:text-yellow-400 transition">Track Order</Link></li>
-            <li><Link href="/about" className="hover:text-yellow-400 transition">About</Link></li>
-            <li><Link href="/contact" className="hover:text-yellow-400 transition">Contact</Link></li>
+          <ul className="hidden lg:flex space-x-8 items-center">
+            {[
+              { href: '/', label: 'Home' },
+              { href: '/menu', label: 'Menu' },
+              { href: '/track', label: 'Track Order' },
+              { href: '/about', label: 'About' },
+              { href: '/contact', label: 'Contact' },
+            ].map((link) => (
+              <li key={link.href}>
+                <Link 
+                  href={link.href} 
+                  className="text-white hover:text-yellow-400 transition-colors font-semibold relative group"
+                >
+                  {link.label}
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-400 group-hover:w-full transition-all duration-300" />
+                </Link>
+              </li>
+            ))}
             <li>
-              <Link href="/cart" className="relative hover:text-yellow-400 transition flex items-center">
-                <ShoppingCart className="w-6 h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-black rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                    {cartCount}
-                  </span>
-                )}
+              <Link href="/cart" className="relative hover:text-yellow-400 transition flex items-center group">
+                <div className="relative">
+                  <ShoppingCart className="w-6 h-6 text-white group-hover:text-yellow-400 transition" />
+                  {cartCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-2 -right-2 bg-yellow-400 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg"
+                    >
+                      {cartCount}
+                    </motion.span>
+                  )}
+                </div>
               </Link>
             </li>
           </ul>
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-yellow-400"
+            className="lg:hidden text-yellow-400 p-2 hover:bg-yellow-400/10 rounded-lg transition"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
           </button>
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <ul className="md:hidden mt-4 space-y-3 pb-4">
-            <li><Link href="/" className="block hover:text-yellow-400 transition">Home</Link></li>
-            <li><Link href="/menu" className="block hover:text-yellow-400 transition">Menu</Link></li>
-            <li><Link href="/track" className="block hover:text-yellow-400 transition">Track Order</Link></li>
-            <li><Link href="/about" className="block hover:text-yellow-400 transition">About</Link></li>
-            <li><Link href="/contact" className="block hover:text-yellow-400 transition">Contact</Link></li>
-            <li>
-              <Link href="/cart" className="flex items-center hover:text-yellow-400 transition">
-                <ShoppingCart className="w-6 h-6 mr-2" />
-                Cart {cartCount > 0 && `(${cartCount})`}
-              </Link>
-            </li>
-          </ul>
-        )}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden overflow-hidden"
+            >
+              <ul className="mt-6 space-y-4 pb-4">
+                {[
+                  { href: '/', label: 'Home' },
+                  { href: '/menu', label: 'Menu' },
+                  { href: '/track', label: 'Track Order' },
+                  { href: '/about', label: 'About' },
+                  { href: '/contact', label: 'Contact' },
+                ].map((link, index) => (
+                  <motion.li
+                    key={link.href}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Link 
+                      href={link.href} 
+                      className="block text-white hover:text-yellow-400 transition py-2 font-semibold"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.li>
+                ))}
+                <motion.li
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Link 
+                    href="/cart" 
+                    className="flex items-center text-white hover:text-yellow-400 transition py-2 font-semibold"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Cart {cartCount > 0 && `(${cartCount})`}
+                  </Link>
+                </motion.li>
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
     </header>
   );
