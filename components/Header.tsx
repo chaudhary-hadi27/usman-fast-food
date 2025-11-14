@@ -29,17 +29,14 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
           : 'bg-black/80 backdrop-blur-sm'
       }`}
     >
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+      <nav className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex justify-between items-center">
-          {/* Logo */}
-          <Link href="/" className="text-xl sm:text-2xl md:text-3xl font-black text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2">
-            <span className="text-2xl sm:text-3xl">🍔</span>
-            <span className="hidden xs:inline">Usman Fast Food</span>
-            <span className="xs:hidden">Usman</span>
+          <Link href="/" className="text-xl sm:text-2xl md:text-3xl font-black text-yellow-400 hover:text-yellow-300 transition-colors flex-shrink-0">
+            🍔 Usman Fast Food
           </Link>
 
           {/* Desktop Menu */}
-          <ul className="hidden lg:flex space-x-6 xl:space-x-8 items-center">
+          <ul className="hidden lg:flex space-x-4 xl:space-x-8 items-center">
             {[
               { href: '/', label: 'Home' },
               { href: '/menu', label: 'Menu' },
@@ -50,7 +47,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               <li key={link.href}>
                 <Link 
                   href={link.href} 
-                  className="text-white hover:text-yellow-400 transition-colors font-semibold relative group text-sm xl:text-base"
+                  className="text-white hover:text-yellow-400 transition-colors font-semibold relative group text-sm xl:text-base whitespace-nowrap"
                 >
                   {link.label}
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-yellow-400 group-hover:w-full transition-all duration-300" />
@@ -58,9 +55,9 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               </li>
             ))}
             <li>
-              <Link href="/cart" className="relative hover:text-yellow-400 transition flex items-center group">
+              <Link href="/cart" className="relative hover:text-yellow-400 transition flex items-center group ml-2">
                 <div className="relative">
-                  <ShoppingCart className="w-5 h-5 xl:w-6 xl:h-6 text-white group-hover:text-yellow-400 transition" />
+                  <ShoppingCart className="w-6 h-6 text-white group-hover:text-yellow-400 transition" />
                   {cartCount > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
@@ -77,11 +74,11 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden text-yellow-400 p-2 hover:bg-yellow-400/10 rounded-lg transition"
+            className="lg:hidden text-yellow-400 p-2 hover:bg-yellow-400/10 rounded-lg transition flex-shrink-0"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? <X className="w-6 h-6 sm:w-7 sm:h-7" /> : <Menu className="w-6 h-6 sm:w-7 sm:h-7" />}
           </button>
         </div>
 
@@ -95,7 +92,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               transition={{ duration: 0.3 }}
               className="lg:hidden overflow-hidden"
             >
-              <ul className="mt-4 space-y-2 pb-4">
+              <ul className="mt-6 space-y-4 pb-4">
                 {[
                   { href: '/', label: 'Home' },
                   { href: '/menu', label: 'Menu' },
@@ -111,7 +108,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                   >
                     <Link 
                       href={link.href} 
-                      className="block text-white hover:text-yellow-400 transition py-2 px-4 font-semibold hover:bg-yellow-400/10 rounded-lg"
+                      className="block text-white hover:text-yellow-400 transition py-2 font-semibold"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {link.label}
@@ -125,7 +122,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                 >
                   <Link 
                     href="/cart" 
-                    className="flex items-center text-white hover:text-yellow-400 transition py-2 px-4 font-semibold hover:bg-yellow-400/10 rounded-lg"
+                    className="flex items-center text-white hover:text-yellow-400 transition py-2 font-semibold"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <ShoppingCart className="w-5 h-5 mr-2" />
