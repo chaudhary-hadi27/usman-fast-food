@@ -9,7 +9,6 @@ import {
 } from '../../../../lib/redis';
 import { 
   menuItemSchema, 
-  updateMenuItemSchema, 
   validateData 
 } from '../../../../lib/validation';
 import { apiRateLimit } from '../../../../lib/rateLimit';
@@ -94,8 +93,20 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Validate input
-    const validation = validateData(updateMenuItemSchema, body);
+    // ✅ FIX: Extract _id and validate separately
+    const { id, _id, ...updateData } = body;
+    const itemId = id || _id; // Support both id and _id
+
+    if (!itemId || itemId.length !== 24) {
+      return NextResponse.json(
+        { message: 'Valid item ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate update data
+    
+    const validation = validateData(menuItemSchema, updateData);
     if (!validation.success) {
       return NextResponse.json(
         { 
@@ -106,12 +117,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { id, ...updateData } = validation.data;
-
     await dbConnect();
     const menuItem = await MenuItem.findByIdAndUpdate(
-      id,
-      updateData,
+      itemId,
+      validation.data,
       { new: true, runValidators: true }
     );
 

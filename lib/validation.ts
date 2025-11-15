@@ -11,9 +11,8 @@ export const menuItemSchema = z.object({
   available: z.boolean().optional().default(true)
 });
 
-export const updateMenuItemSchema = menuItemSchema.extend({
-  id: z.string().length(24) // MongoDB ObjectId length
-});
+// ✅ REMOVED: updateMenuItemSchema - no longer needed
+// We'll handle id/._id separately in the API route
 
 // Order Validation
 export const orderItemSchema = z.object({
@@ -25,16 +24,16 @@ export const orderItemSchema = z.object({
 
 export const createOrderSchema = z.object({
   customerName: z.string().min(2).max(100),
+  customerEmail: z.string().email(), // ✅ FIX: Added email validation
   customerPhone: z.string().regex(/^(\+92|0)?3\d{9}$/, 'Invalid Pakistani phone number'),
   deliveryAddress: z.string().min(10).max(500),
+  specialInstructions: z.string().max(500).optional(), // ✅ FIX: Added optional special instructions
   items: z.array(orderItemSchema).min(1).max(20),
   totalAmount: z.number().positive().max(1000000)
 });
 
-export const updateOrderStatusSchema = z.object({
-  orderId: z.string().regex(/^ORD-[A-Z0-9]{9}$/),
-  status: z.enum(['Pending', 'Cooking', 'Out for Delivery', 'Delivered'])
-});
+// ✅ FIX: Removed updateOrderStatusSchema - validation moved to API route
+// This allows more flexibility and clearer error messages
 
 // Auth Validation
 export const loginSchema = z.object({

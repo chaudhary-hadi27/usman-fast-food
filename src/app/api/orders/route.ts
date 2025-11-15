@@ -9,7 +9,6 @@ import {
 } from '../../../../lib/redis';
 import { 
   createOrderSchema, 
-  updateOrderStatusSchema, 
   validateData 
 } from '../../../../lib/validation';
 import { apiRateLimit, orderRateLimit } from '../../../../lib/rateLimit';
@@ -102,7 +101,8 @@ export async function POST(request: NextRequest) {
 
     const orderData = {
       ...validation.data,
-      orderId: generateOrderId()
+      orderId: generateOrderId(),
+      status: 'Pending' // Default status
     };
 
     await dbConnect();
@@ -130,20 +130,27 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const { orderId, status } = body;
 
-    // Validate input
-    const validation = validateData(updateOrderStatusSchema, body);
-    if (!validation.success) {
+    // ✅ FIX: Validate orderId format
+    if (!orderId || !orderId.match(/^ORD-[A-Z0-9]{9}$/)) {
       return NextResponse.json(
-        { 
-          message: 'Validation failed', 
-          errors: validation.errors
-        },
+        { message: 'Valid order ID is required (format: ORD-XXXXXXXXX)' },
         { status: 400 }
       );
     }
 
-    const { orderId, status } = validation.data;
+    // ✅ FIX: Complete status validation
+    const validStatuses = ['Pending', 'Confirmed', 'Cooking', 'Out for Delivery', 'Delivered', 'Cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { 
+          message: 'Invalid status', 
+          validStatuses 
+        },
+        { status: 400 }
+      );
+    }
 
     await dbConnect();
     const order = await Order.findOneAndUpdate(
