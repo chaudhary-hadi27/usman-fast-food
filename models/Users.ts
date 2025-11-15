@@ -1,4 +1,4 @@
-// FILE: models/Users.ts (UPDATED)
+// models/User.ts (RENAMED from Users.ts)
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({

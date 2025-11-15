@@ -1,47 +1,37 @@
 // lib/monitoring.ts
-import * as Sentry from '@sentry/nextjs';
+
+// Define Transaction interface for type safety
+interface Transaction {
+  finish: () => void;
+  startChild: (context: any) => Transaction;
+}
+
+// Check if Sentry is available
+const sentryAvailable = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SENTRY_DSN;
 
 // Initialize Sentry (call this in your app initialization)
 export function initMonitoring() {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      environment: process.env.NODE_ENV,
-      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-      beforeSend(event, hint) {
-        // Don't send errors in development
-        if (process.env.NODE_ENV === 'development') {
-          console.error(hint.originalException || hint.syntheticException);
-          return null;
-        }
-        return event;
-      }
-    });
-  }
+  // Sentry initialization removed - optional feature
+  console.log('Monitoring initialized (Sentry disabled)');
 }
 
 // Custom error logger
 export function logError(error: Error, context?: Record<string, any>) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.captureException(error, {
-      extra: context
-    });
-  } else {
-    console.error('Error:', error, 'Context:', context);
-  }
+  console.error('Error:', error.message, 'Context:', context);
 }
 
-// Performance monitoring
-export function startTransaction(name: string, op: string) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    return Sentry.startTransaction({ name, op });
-  }
-  return {
-    finish: () => {},
-    startChild: () => ({
-      finish: () => {}
-    })
+// Performance monitoring - Returns mock transaction
+export function startTransaction(name: string, op: string): Transaction {
+  const transaction: Transaction = {
+    finish: () => {
+      // Mock finish
+    },
+    startChild: (context: any): Transaction => {
+      return transaction; // Return self for chaining
+    }
   };
+  
+  return transaction;
 }
 
 // Analytics tracking (Google Analytics placeholder)
@@ -64,18 +54,9 @@ export function trackEvent(
 export function trackOrder(orderId: string, amount: number) {
   trackEvent('ecommerce', 'purchase', orderId, amount);
   
-  // Log to your backend analytics
-  if (process.env.NODE_ENV === 'production') {
-    fetch('/api/analytics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'order_placed',
-        orderId,
-        amount,
-        timestamp: new Date().toISOString()
-      })
-    }).catch(console.error);
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Order tracked:', { orderId, amount });
   }
 }
 

@@ -22,6 +22,7 @@ interface Order {
   orderId: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   items: any[];
   totalAmount: number;
   status: string;
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const [showMenuForm, setShowMenuForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const [menuForm, setMenuForm] = useState({
@@ -54,11 +56,21 @@ export default function AdminDashboard() {
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await fetch('/api/menu');
       const data = await res.json();
-      setMenuItems(data);
+      
+      // CRITICAL: Ensure it's always an array
+      if (Array.isArray(data)) {
+        setMenuItems(data);
+      } else {
+        console.error('Menu API returned non-array:', data);
+        setMenuItems([]);
+      }
     } catch (error) {
       console.error('Error fetching menu:', error);
+      setMenuItems([]);
+      setError('Failed to load menu items');
     } finally {
       setLoading(false);
     }
@@ -67,11 +79,21 @@ export default function AdminDashboard() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await fetch('/api/orders?all=true');
       const data = await res.json();
-      setOrders(data);
+      
+      // CRITICAL: Ensure it's always an array
+      if (Array.isArray(data)) {
+        setOrders(data);
+      } else {
+        console.error('Orders API returned non-array:', data);
+        setOrders([]);
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
+      setOrders([]);
+      setError('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -217,6 +239,12 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
         {loading && (
           <div className="text-center py-8">
             <div className="spinner mx-auto mb-4"></div>
@@ -228,57 +256,58 @@ export default function AdminDashboard() {
           <div>
             <h2 className="text-3xl font-bold mb-6">All Orders</h2>
             <div className="space-y-4">
-              {orders.map(order => (
-                <div key={order._id} className="card p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold">Order #{order.orderId}</h3>
-                      <p className="text-gray-600">{order.customerName} - {order.customerPhone}</p>
-                      <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
+              {Array.isArray(orders) && orders.length > 0 ? (
+                orders.map(order => (
+                  <div key={order._id} className="card p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold">Order #{order.orderId}</h3>
+                        <p className="text-gray-600">{order.customerName} - {order.customerPhone}</p>
+                        <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-yellow-600">Rs. {order.totalAmount}</p>
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mt-2 ${
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                          order.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'Cooking' ? 'bg-orange-100 text-orange-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-yellow-600">Rs. {order.totalAmount}</p>
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mt-2 ${
-                        order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                        order.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'Cooking' ? 'bg-orange-100 text-orange-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {order.status}
-                      </span>
+                    
+                    <div className="mb-4">
+                      <p className="font-semibold mb-2">Items:</p>
+                      {Array.isArray(order.items) && order.items.map((item, idx) => (
+                        <p key={idx} className="text-gray-600">
+                          {item.name} x{item.quantity} - Rs. {item.price * item.quantity}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="font-semibold">Delivery Address:</p>
+                      <p className="text-gray-600">{order.deliveryAddress}</p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
+                        className="input-field"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Cooking">Cooking</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                      </select>
                     </div>
                   </div>
-                  
-                  <div className="mb-4">
-                    <p className="font-semibold mb-2">Items:</p>
-                    {order.items.map((item, idx) => (
-                      <p key={idx} className="text-gray-600">
-                        {item.name} x{item.quantity} - Rs. {item.price * item.quantity}
-                      </p>
-                    ))}
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="font-semibold">Delivery Address:</p>
-                    <p className="text-gray-600">{order.deliveryAddress}</p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
-                      className="input-field"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Cooking">Cooking</option>
-                      <option value="Out for Delivery">Out for Delivery</option>
-                      <option value="Delivered">Delivered</option>
-                    </select>
-                  </div>
-                </div>
-              ))}
-              
-              {orders.length === 0 && (
+                ))
+              ) : (
                 <div className="text-center py-12 bg-white rounded-lg">
                   <p className="text-gray-600 text-lg">No orders yet</p>
                 </div>
@@ -359,33 +388,33 @@ export default function AdminDashboard() {
             )}
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {menuItems.map(item => (
-                <div key={item._id} className="card overflow-hidden">
-                  <div className="relative h-48">
-                    <OptimizedImage
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-xl font-bold mb-2">{item.name}</h3>
-                    <p className="text-gray-600 mb-2 line-clamp-2">{item.description}</p>
-                    <p className="text-yellow-600 font-bold mb-4">Rs. {item.price}</p>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleEditItem(item)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center gap-2">
-                        <Edit className="w-4 h-4" /> Edit
-                      </button>
-                      <button onClick={() => handleDeleteItem(item._id, item.name)} className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg flex items-center justify-center gap-2">
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </button>
+              {Array.isArray(menuItems) && menuItems.length > 0 ? (
+                menuItems.map(item => (
+                  <div key={item._id} className="card overflow-hidden">
+                    <div className="relative h-48">
+                      <OptimizedImage
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-xl font-bold mb-2">{item.name}</h3>
+                      <p className="text-gray-600 mb-2 line-clamp-2">{item.description}</p>
+                      <p className="text-yellow-600 font-bold mb-4">Rs. {item.price}</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEditItem(item)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center gap-2">
+                          <Edit className="w-4 h-4" /> Edit
+                        </button>
+                        <button onClick={() => handleDeleteItem(item._id, item.name)} className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg flex items-center justify-center gap-2">
+                          <Trash2 className="w-4 h-4" /> Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              
-              {menuItems.length === 0 && (
+                ))
+              ) : (
                 <div className="col-span-full text-center py-12 bg-white rounded-lg">
                   <p className="text-gray-600 text-lg mb-4">No menu items yet</p>
                   <button

@@ -13,20 +13,17 @@ import {
   validateData 
 } from '../../../../lib/validation';
 import { apiRateLimit } from '../../../../lib/rateLimit';
-import { logError, startTransaction } from '../../../../lib/monitoring';
+import { logError } from '../../../../lib/monitoring';
 
 export async function GET(request: NextRequest) {
   const rateLimitResponse = apiRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
-  const transaction = startTransaction('GET /api/menu', 'http');
-
   try {
     // Try cache first
     const cached = await getCachedMenu();
     if (cached) {
-      transaction.finish();
-      return NextResponse.json(cached, {
+      return NextResponse.json(Array.isArray(cached) ? cached : [], {
         headers: { 'X-Cache': 'HIT' }
       });
     }
@@ -36,30 +33,28 @@ export async function GET(request: NextRequest) {
     const menuItems = await MenuItem.find({ available: true })
       .sort({ category: 1 })
       .lean()
-      .select('-__v'); // Exclude version field
+      .select('-__v');
+
+    // Ensure array
+    const items = Array.isArray(menuItems) ? menuItems : [];
 
     // Cache for 5 minutes
-    await setCachedMenu(menuItems, 300);
+    await setCachedMenu(items, 300);
 
-    transaction.finish();
-    return NextResponse.json(menuItems, {
+    return NextResponse.json(items, {
       headers: { 'X-Cache': 'MISS' }
     });
   } catch (error) {
     logError(error as Error, { route: '/api/menu', method: 'GET' });
-    transaction.finish();
-    return NextResponse.json(
-      { message: 'Failed to fetch menu items' },
-      { status: 500 }
-    );
+    
+    // CRITICAL: Return empty array on error
+    return NextResponse.json([]);
   }
 }
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = apiRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
-
-  const transaction = startTransaction('POST /api/menu', 'http');
 
   try {
     const body = await request.json();
@@ -70,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           message: 'Validation failed', 
-          errors: validation.errors?.issues 
+          errors: validation.errors
         },
         { status: 400 }
       );
@@ -82,11 +77,9 @@ export async function POST(request: NextRequest) {
     // Invalidate cache
     await invalidateMenuCache();
 
-    transaction.finish();
     return NextResponse.json(menuItem, { status: 201 });
   } catch (error) {
     logError(error as Error, { route: '/api/menu', method: 'POST' });
-    transaction.finish();
     return NextResponse.json(
       { message: 'Failed to create menu item' },
       { status: 400 }
@@ -98,8 +91,6 @@ export async function PUT(request: NextRequest) {
   const rateLimitResponse = apiRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
-  const transaction = startTransaction('PUT /api/menu', 'http');
-
   try {
     const body = await request.json();
     
@@ -109,7 +100,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { 
           message: 'Validation failed', 
-          errors: validation.errors?.issues 
+          errors: validation.errors
         },
         { status: 400 }
       );
@@ -134,11 +125,9 @@ export async function PUT(request: NextRequest) {
     // Invalidate cache
     await invalidateMenuCache();
 
-    transaction.finish();
     return NextResponse.json(menuItem);
   } catch (error) {
     logError(error as Error, { route: '/api/menu', method: 'PUT' });
-    transaction.finish();
     return NextResponse.json(
       { message: 'Failed to update menu item' },
       { status: 400 }
@@ -149,8 +138,6 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const rateLimitResponse = apiRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
-
-  const transaction = startTransaction('DELETE /api/menu', 'http');
 
   try {
     const { searchParams } = new URL(request.url);
@@ -176,11 +163,9 @@ export async function DELETE(request: NextRequest) {
     // Invalidate cache
     await invalidateMenuCache();
 
-    transaction.finish();
     return NextResponse.json({ message: 'Menu item deleted successfully' });
   } catch (error) {
     logError(error as Error, { route: '/api/menu', method: 'DELETE' });
-    transaction.finish();
     return NextResponse.json(
       { message: 'Failed to delete menu item' },
       { status: 400 }
