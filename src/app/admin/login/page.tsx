@@ -1,8 +1,10 @@
+// src/app/admin/login/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, AlertCircle } from 'lucide-react';
+import { trackEvent } from '../../../../lib/monitoring';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -16,12 +18,27 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
 
-    // Simple authentication (in production, use proper auth like NextAuth)
-    if (username === 'admin' && password === 'admin123') {
-      localStorage.setItem('adminAuth', 'true');
-      router.push('/admin/dashboard');
-    } else {
-      setError('Invalid username or password');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        trackEvent('auth', 'login_success', 'admin');
+        router.push('/admin/dashboard');
+        router.refresh();
+      } else {
+        setError(data.message || 'Invalid username or password');
+        trackEvent('auth', 'login_failed', 'admin');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      trackEvent('auth', 'login_error', 'admin');
+    } finally {
       setLoading(false);
     }
   };
@@ -43,8 +60,9 @@ export default function AdminLogin() {
           </div>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
-              {error}
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -60,6 +78,7 @@ export default function AdminLogin() {
                   className="input-field pl-12"
                   placeholder="Enter admin username"
                   required
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -75,6 +94,7 @@ export default function AdminLogin() {
                   className="input-field pl-12"
                   placeholder="Enter password"
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -82,9 +102,16 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full"
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  Logging in...
+                </div>
+              ) : (
+                'Login'
+              )}
             </button>
           </form>
 
