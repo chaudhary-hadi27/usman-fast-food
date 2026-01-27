@@ -1,4 +1,4 @@
-// FILE: components/Header.tsx (UPDATED)
+// components/Header.tsx - FIXED VERSION
 'use client';
 
 import Link from 'next/link';
@@ -7,22 +7,23 @@ import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-
-interface HeaderProps {
-  cartCount?: number;
-}
+import { useCart } from '../hooks/useCart';
 
 interface UserData {
   name: string;
   email: string;
 }
 
-export default function Header({ cartCount = 0 }: HeaderProps) {
+export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
+  
+  // Use the cart hook
+  const { getItemCount } = useCart();
+  const cartCount = getItemCount();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,7 +34,11 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
     // Check if user is logged in
     const userData = localStorage.getItem('userData');
     if (userData) {
-      setUser(JSON.parse(userData));
+      try {
+        setUser(JSON.parse(userData));
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
     }
 
     return () => window.removeEventListener('scroll', handleScroll);
@@ -50,7 +55,6 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black shadow-xl">
-
       <nav className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-xl sm:text-2xl md:text-3xl font-black text-yellow-400 hover:text-yellow-300 transition-colors flex-shrink-0">
@@ -86,6 +90,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
+                      key={cartCount} // This will trigger animation on count change
                       className="absolute -top-2 -right-2 bg-yellow-400 text-black rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-lg"
                     >
                       {cartCount}

@@ -1,4 +1,4 @@
-// FILE: components/FeaturedMenu.tsx
+// components/FeaturedMenu.tsx - FIXED VERSION
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Plus, Star, TrendingUp, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useCart } from '../hooks/useCart';
 
 interface MenuItem {
   _id: string;
@@ -19,12 +20,13 @@ interface MenuItem {
 }
 
 interface FeaturedMenuProps {
-  onCartUpdate: () => void;
+  onCartUpdate?: () => void; // Made optional since we're using the hook now
 }
 
 export default function FeaturedMenu({ onCartUpdate }: FeaturedMenuProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addItem } = useCart(); // Use the cart hook
 
   useEffect(() => {
     fetchFeaturedItems();
@@ -110,24 +112,28 @@ export default function FeaturedMenu({ onCartUpdate }: FeaturedMenuProps) {
     }
   };
 
-  const addToCart = (item: MenuItem) => {
+  const handleAddToCart = (item: MenuItem) => {
     try {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      const existingItem = cart.find((i: any) => i._id === item._id);
-
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        cart.push({ ...item, quantity: 1 });
-      }
-
-      localStorage.setItem('cart', JSON.stringify(cart));
-      onCartUpdate();
+      // Use the hook to add item
+      addItem({
+        _id: item._id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        description: item.description,
+        category: item.category
+      }, 1);
       
       toast.success(`${item.name} added to cart!`, {
         icon: '🛒',
       });
+
+      // Call the callback if provided (for backward compatibility)
+      if (onCartUpdate) {
+        onCartUpdate();
+      }
     } catch (error) {
+      console.error('Error adding to cart:', error);
       toast.error('Failed to add item to cart');
     }
   };
@@ -222,7 +228,7 @@ export default function FeaturedMenu({ onCartUpdate }: FeaturedMenuProps) {
                     </div>
 
                     <button
-                      onClick={() => addToCart(item)}
+                      onClick={() => handleAddToCart(item)}
                       className="w-full mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-600 font-bold py-2.5 sm:py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-md text-sm sm:text-base"
                     >
                       <Plus className="w-4 h-4 sm:w-5 sm:h-5" />

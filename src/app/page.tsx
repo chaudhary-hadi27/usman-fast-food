@@ -1,9 +1,8 @@
-// FILE: src/app/page.tsx
+// src/app/page.tsx - FIXED VERSION
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Header from '../../components/Header';
 import DealsSlider from '../../components/DealsSlider';
 import FeaturedMenu from '../../components/FeaturedMenu';
@@ -12,21 +11,6 @@ import LiveOrderCounter from '../../components/LiveOrderCounter';
 import { ArrowRight, Star, Clock, Truck, ChefHat, Shield, Heart, Zap, Award, Users } from 'lucide-react';
 
 export default function Home() {
-  const [cartCount, setCartCount] = useState(0);
-
-  useEffect(() => {
-    updateCartCount();
-  }, []);
-
-  const updateCartCount = () => {
-    try {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      setCartCount(cart.reduce((sum: number, item: any) => sum + item.quantity, 0));
-    } catch (error) {
-      setCartCount(0);
-    }
-  };
-
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -43,7 +27,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Header cartCount={cartCount} />
+      {/* Header now manages its own cart count */}
+      <Header />
 
       {/* Hero Section */}
       <section 
@@ -126,8 +111,8 @@ export default function Home() {
       {/* Deals Slider Section */}
       <DealsSlider />
 
-      {/* Featured Menu Section */}
-      <FeaturedMenu onCartUpdate={updateCartCount} />
+      {/* Featured Menu Section - No need to pass onCartUpdate */}
+      <FeaturedMenu />
 
       {/* Testimonials Section */}
       <Testimonials />

@@ -1,9 +1,9 @@
-// src/app/admin/dashboard/page.tsx
+// src/app/admin/dashboard/page.tsx - COMPLETE VERSION
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { LogOut, Plus, Edit, Trash2, RefreshCw, MapPin, ExternalLink, Navigation } from 'lucide-react';
 import OptimizedImage from '../../../../components/OptimizedImage';
 import { trackEvent } from '../../../../lib/monitoring';
 
@@ -17,6 +17,15 @@ interface MenuItem {
   available: boolean;
 }
 
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  detectedCity: string;
+  detectedCountry: string;
+  accuracy?: number;
+  source?: string;
+}
+
 interface Order {
   _id: string;
   orderId: string;
@@ -28,6 +37,8 @@ interface Order {
   status: string;
   createdAt: string;
   deliveryAddress: string;
+  locationData?: LocationData;
+  mapLink?: string;
 }
 
 export default function AdminDashboard() {
@@ -60,7 +71,6 @@ export default function AdminDashboard() {
       const res = await fetch('/api/menu');
       const data = await res.json();
       
-      // CRITICAL: Ensure it's always an array
       if (Array.isArray(data)) {
         setMenuItems(data);
       } else {
@@ -83,7 +93,6 @@ export default function AdminDashboard() {
       const res = await fetch('/api/orders?all=true');
       const data = await res.json();
       
-      // CRITICAL: Ensure it's always an array
       if (Array.isArray(data)) {
         setOrders(data);
       } else {
@@ -258,52 +267,145 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               {Array.isArray(orders) && orders.length > 0 ? (
                 orders.map(order => (
-                  <div key={order._id} className="card p-6">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={order._id} className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-100">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Left Side - Order Info */}
                       <div>
-                        <h3 className="text-xl font-bold">Order #{order.orderId}</h3>
-                        <p className="text-gray-600">{order.customerName} - {order.customerPhone}</p>
-                        <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-yellow-600">Rs. {order.totalAmount}</p>
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mt-2 ${
-                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                          order.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800' :
-                          order.status === 'Cooking' ? 'bg-orange-100 text-orange-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <p className="font-semibold mb-2">Items:</p>
-                      {Array.isArray(order.items) && order.items.map((item, idx) => (
-                        <p key={idx} className="text-gray-600">
-                          {item.name} x{item.quantity} - Rs. {item.price * item.quantity}
-                        </p>
-                      ))}
-                    </div>
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-xl font-bold">Order #{order.orderId}</h3>
+                            <p className="text-gray-600">{order.customerName}</p>
+                            <p className="text-gray-600">{order.customerPhone}</p>
+                            {order.customerEmail && (
+                              <p className="text-gray-500 text-sm">{order.customerEmail}</p>
+                            )}
+                            <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-yellow-600">Rs. {order.totalAmount}</p>
+                            <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold mt-2 ${
+                              order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                              order.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'Cooking' ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {order.status}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-4">
+                          <p className="font-semibold mb-2">Items:</p>
+                          {Array.isArray(order.items) && order.items.map((item, idx) => (
+                            <p key={idx} className="text-gray-600 text-sm">
+                              {item.name} x{item.quantity} - Rs. {item.price * item.quantity}
+                            </p>
+                          ))}
+                        </div>
 
-                    <div className="mb-4">
-                      <p className="font-semibold">Delivery Address:</p>
-                      <p className="text-gray-600">{order.deliveryAddress}</p>
-                    </div>
+                        <div className="mb-4">
+                          <p className="font-semibold">Delivery Address:</p>
+                          <p className="text-gray-600 text-sm">{order.deliveryAddress}</p>
+                        </div>
 
-                    <div className="flex gap-2">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
-                        className="input-field"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Cooking">Cooking</option>
-                        <option value="Out for Delivery">Out for Delivery</option>
-                        <option value="Delivered">Delivered</option>
-                      </select>
+                        <div className="flex gap-2">
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
+                            className="input-field flex-1"
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Out for Delivery">Out for Delivery</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Right Side - Location Info */}
+                      <div>
+                        {order.locationData ? (
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-200 h-full">
+                            <div className="flex items-center gap-2 mb-4">
+                              <MapPin className="w-6 h-6 text-blue-600" />
+                              <h4 className="font-black text-lg text-blue-900">Customer Location</h4>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-xs font-semibold text-blue-700 mb-1">City & Country</p>
+                                <p className="text-sm font-bold text-blue-900">
+                                  {order.locationData.detectedCity}, {order.locationData.detectedCountry}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="text-xs font-semibold text-blue-700 mb-1">Coordinates</p>
+                                <p className="text-xs font-mono text-blue-800">
+                                  Lat: {order.locationData.latitude.toFixed(6)}
+                                </p>
+                                <p className="text-xs font-mono text-blue-800">
+                                  Long: {order.locationData.longitude.toFixed(6)}
+                                </p>
+                              </div>
+
+                              {order.locationData.accuracy && (
+                                <div>
+                                  <p className="text-xs font-semibold text-blue-700 mb-1">Accuracy</p>
+                                  <p className="text-xs text-blue-800">
+                                    ±{order.locationData.accuracy}m ({order.locationData.source?.toUpperCase()})
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Map Preview */}
+                              <div className="mt-4">
+                                <div className="relative rounded-lg overflow-hidden border-2 border-blue-300 shadow-lg">
+                                  <iframe
+                                    width="100%"
+                                    height="200"
+                                    frameBorder="0"
+                                    style={{ border: 0 }}
+                                    src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${order.locationData.latitude},${order.locationData.longitude}&zoom=15`}
+                                    allowFullScreen
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-2 mt-4">
+                                <a
+                                  href={`https://www.google.com/maps?q=${order.locationData.latitude},${order.locationData.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  Open in Maps
+                                </a>
+                                <a
+                                  href={`https://www.google.com/maps/dir/?api=1&destination=${order.locationData.latitude},${order.locationData.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 text-sm"
+                                >
+                                  <Navigation className="w-4 h-4" />
+                                  Navigate
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 rounded-lg p-6 border-2 border-gray-200 h-full flex items-center justify-center">
+                            <div className="text-center">
+                              <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                              <p className="text-gray-500 font-semibold">No location data available</p>
+                              <p className="text-gray-400 text-sm mt-2">Customer entered address manually</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))

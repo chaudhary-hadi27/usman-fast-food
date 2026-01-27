@@ -1,5 +1,6 @@
+// hooks/useCart.ts - FIXED VERSION (No infinite loops!)
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface CartItem {
   _id: string;
@@ -7,29 +8,20 @@ export interface CartItem {
   price: number;
   image: string;
   quantity: number;
-  maxQuantity?: number;
+  description?: string;
+  category?: string;
 }
 
-const CART_STORAGE_KEY = 'usman_fast_food_cart';
+const CART_STORAGE_KEY = 'cart';
 const MAX_ITEM_QUANTITY = 20;
 
 export function useCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const isInitialMount = useRef(true);
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage on mount ONLY
   useEffect(() => {
-    loadCart();
-  }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    if (!isLoading) {
-      saveCart(cart);
-    }
-  }, [cart, isLoading]);
-
-  const loadCart = () => {
     try {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
       if (saved) {
@@ -42,100 +34,143 @@ export function useCart() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // Empty dependency - runs once on mount
 
-  const saveCart = (cartData: CartItem[]) => {
-    try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
-      
-      // Dispatch event for cross-tab sync
-      window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cartData }));
-    } catch (error) {
-      console.error('Failed to save cart:', error);
+  // Save cart to localStorage whenever it changes (skip initial mount)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  };
 
-  const addItem = (item: Omit<CartItem, 'quantity'>, quantity: number = 1): boolean => {
-    const existingIndex = cart.findIndex(i => i._id === item._id);
-    
-    if (existingIndex >= 0) {
-      const existing = cart[existingIndex];
-      const newQuantity = existing.quantity + quantity;
-      
-      if (newQuantity > MAX_ITEM_QUANTITY) {
-        return false; // Max quantity reached
+    if (!isLoading) {
+      try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        
+        // Dispatch custom event for cross-component sync
+        window.dispatchEvent(new CustomEvent('cartUpdated', { 
+          detail: { cart, count: cart.reduce((sum, item) => sum + item.quantity, 0) }
+        }));
+      } catch (error) {
+        console.error('Failed to save cart:', error);
       }
-      
-      const newCart = [...cart];
-      newCart[existingIndex] = { ...existing, quantity: newQuantity };
-      setCart(newCart);
-    } else {
-      if (quantity > MAX_ITEM_QUANTITY) {
-        return false;
-      }
-      setCart([...cart, { ...item, quantity }]);
     }
+  }, [cart, isLoading]);
+
+  // Listen for storage changes from other tabs/windows
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === CART_STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setCart(Array.isArray(parsed) ? parsed : []);
+        } catch (error) {
+          console.error('Failed to sync cart from storage:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []); // Empty dependency - event listener doesn't need updates
+
+  const addItem = useCallback((item: Omit<CartItem, 'quantity'>, quantity: number = 1): boolean => {
+    setCart(currentCart => {
+      const existingIndex = currentCart.findIndex(i => i._id === item._id);
+      
+      if (existingIndex >= 0) {
+        const existing = currentCart[existingIndex];
+        const newQuantity = existing.quantity + quantity;
+        
+        if (newQuantity > MAX_ITEM_QUANTITY) {
+          return currentCart; // Don't update if exceeds max
+        }
+        
+        const newCart = [...currentCart];
+        newCart[existingIndex] = { ...existing, quantity: newQuantity };
+        return newCart;
+      } else {
+        if (quantity > MAX_ITEM_QUANTITY) {
+          return currentCart; // Don't add if exceeds max
+        }
+        return [...currentCart, { ...item, quantity }];
+      }
+    });
     
     return true;
-  };
+  }, []);
 
-  const removeItem = (itemId: string) => {
-    setCart(cart.filter(item => item._id !== itemId));
-  };
+  const removeItem = useCallback((itemId: string) => {
+    setCart(currentCart => currentCart.filter(item => item._id !== itemId));
+  }, []);
 
-  const updateQuantity = (itemId: string, quantity: number): boolean => {
+  const updateQuantity = useCallback((itemId: string, quantity: number): boolean => {
     if (quantity < 1 || quantity > MAX_ITEM_QUANTITY) {
       return false;
     }
     
-    setCart(cart.map(item => 
-      item._id === itemId ? { ...item, quantity } : item
-    ));
+    setCart(currentCart => 
+      currentCart.map(item => 
+        item._id === itemId ? { ...item, quantity } : item
+      )
+    );
     
     return true;
-  };
+  }, []);
 
-  const incrementQuantity = (itemId: string): boolean => {
-    const item = cart.find(i => i._id === itemId);
-    if (!item || item.quantity >= MAX_ITEM_QUANTITY) {
-      return false;
-    }
-    
-    return updateQuantity(itemId, item.quantity + 1);
-  };
+  const incrementQuantity = useCallback((itemId: string): boolean => {
+    let success = false;
+    setCart(currentCart => {
+      const item = currentCart.find(i => i._id === itemId);
+      if (!item || item.quantity >= MAX_ITEM_QUANTITY) {
+        success = false;
+        return currentCart;
+      }
+      
+      success = true;
+      return currentCart.map(i => 
+        i._id === itemId ? { ...i, quantity: i.quantity + 1 } : i
+      );
+    });
+    return success;
+  }, []);
 
-  const decrementQuantity = (itemId: string): boolean => {
-    const item = cart.find(i => i._id === itemId);
-    if (!item) return false;
-    
-    if (item.quantity <= 1) {
-      removeItem(itemId);
-      return true;
-    }
-    
-    return updateQuantity(itemId, item.quantity - 1);
-  };
+  const decrementQuantity = useCallback((itemId: string): boolean => {
+    setCart(currentCart => {
+      const item = currentCart.find(i => i._id === itemId);
+      if (!item) return currentCart;
+      
+      if (item.quantity <= 1) {
+        return currentCart.filter(i => i._id !== itemId);
+      }
+      
+      return currentCart.map(i => 
+        i._id === itemId ? { ...i, quantity: i.quantity - 1 } : i
+      );
+    });
+    return true;
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart([]);
-  };
+  }, []);
 
-  const getItemCount = (): number => {
+  const getItemCount = useCallback((): number => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
-  };
+  }, [cart]);
 
-  const getTotal = (): number => {
+  const getTotal = useCallback((): number => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  };
+  }, [cart]);
 
-  const isInCart = (itemId: string): boolean => {
+  const isInCart = useCallback((itemId: string): boolean => {
     return cart.some(item => item._id === itemId);
-  };
+  }, [cart]);
 
-  const getItemQuantity = (itemId: string): number => {
+  const getItemQuantity = useCallback((itemId: string): number => {
     const item = cart.find(i => i._id === itemId);
     return item?.quantity || 0;
-  };
+  }, [cart]);
 
   return {
     cart,

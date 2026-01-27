@@ -1,3 +1,4 @@
+// models/Order.ts - WITH LOCATION DATA
 import mongoose from 'mongoose';
 
 const OrderSchema = new mongoose.Schema({
@@ -5,7 +6,7 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true, // Performance: Add index
+    index: true,
   },
   customerName: {
     type: String,
@@ -17,7 +18,7 @@ const OrderSchema = new mongoose.Schema({
     required: true,
     trim: true,
     lowercase: true,
-    index: true, // Performance: Search by email
+    index: true,
   },
   customerPhone: {
     type: String,
@@ -43,7 +44,7 @@ const OrderSchema = new mongoose.Schema({
       type: Number,
       required: true,
       min: 1,
-      max: 99, // Prevent abuse
+      max: 99,
     },
   }],
   totalAmount: {
@@ -55,7 +56,7 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     enum: ['Pending', 'Confirmed', 'Cooking', 'Out for Delivery', 'Delivered', 'Cancelled'],
     default: 'Pending',
-    index: true, // Performance: Filter by status
+    index: true,
   },
   deliveryAddress: {
     type: String,
@@ -65,6 +66,36 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     maxlength: 500,
   },
+  // 🆕 LOCATION DATA
+  locationData: {
+    latitude: {
+      type: Number,
+    },
+    longitude: {
+      type: Number,
+    },
+    detectedCity: {
+      type: String,
+    },
+    detectedCountry: {
+      type: String,
+    },
+    accuracy: {
+      type: Number, // in meters
+    },
+    source: {
+      type: String,
+      enum: ['gps', 'wifi', 'ip'],
+    },
+    detectedAt: {
+      type: Date,
+      default: Date.now,
+    }
+  },
+  // Map Link for easy navigation
+  mapLink: {
+    type: String,
+  },
   cancelledAt: {
     type: Date,
   },
@@ -72,11 +103,21 @@ const OrderSchema = new mongoose.Schema({
     type: String,
   },
 }, {
-  timestamps: true, // Adds createdAt and updatedAt
+  timestamps: true,
 });
 
-// Performance: Compound index for common queries
+// Performance indexes
 OrderSchema.index({ customerEmail: 1, createdAt: -1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ 'locationData.latitude': 1, 'locationData.longitude': 1 }); // For location-based queries
+
+// Pre-save hook to generate map link
+OrderSchema.pre('save', function(next) {
+  if (this.locationData?.latitude && this.locationData?.longitude) {
+    // Google Maps link
+    this.mapLink = `https://www.google.com/maps?q=${this.locationData.latitude},${this.locationData.longitude}`;
+  }
+  next();
+});
 
 export default mongoose.models.Order || mongoose.model('Order', OrderSchema);
